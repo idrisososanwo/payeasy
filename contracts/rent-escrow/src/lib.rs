@@ -1,6 +1,17 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Map};
 
+use soroban_sdk::contracterror;
+
+// define Enum Error
+#[contracterror]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum Error {
+    InvalidAmount = 1,
+    InsufficientFunding = 2,
+}
+
+
 //RentEscrow defined already
 #[contracttype]
 #[derive(Clone)]
@@ -30,11 +41,17 @@ impl RentEscrow {
     }
 
     /// Roommates call this to contribute their share of the rent
-    pub fn contribute(env: Env, from: Address, amount: i128) {
+    /// implement enum error effect to be used in a return
+    pub fn contribute(env: Env, from: Address, amount: i128) -> Result<(), Error> {
         // TODO: Implement contribution logic
         // 1. Verify 'from' is a valid roommate
         // 2. Transfer tokens from 'from' to the contract
         // 3. Update contributions map
+        if amount <= 0 {
+            return Err(Error::InvalidAmount);
+        }
+
+        Ok(())
     }
 
     /// Release the total rent to the landlord if fully funded
