@@ -51,4 +51,5 @@ impl RentEscrow {
     }
 }
 
+#[cfg(test)]
 mod test;
