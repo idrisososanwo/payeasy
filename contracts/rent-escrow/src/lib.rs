@@ -1,18 +1,31 @@
 ﻿#![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, Address, Env};
+use soroban_sdk::{contract, contractimpl, contracttype, contracterror, Address, Env, Map};
+
+/// Error types for the rent escrow contract.
+#[contracterror]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum Error {
+    InvalidAmount = 1,
+    InsufficientFunding = 2,
+}
 
 /// Storage key definitions for persistent contract state.
 ///
-/// Each variant maps to a unique slot in the Soroban persistent storage trie.
 /// Using a `#[contracttype]` enum guarantees type-safe, collision-free keys.
-///
-/// - `DataKey::Landlord` - stores the landlord's `Address`
-/// - `DataKey::Amount`   - stores the escrowed amount as `i128`
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum DataKey {
-    Landlord,
-    Amount,
+    Escrow,
+}
+
+/// The rent escrow data structure.
+#[contracttype]
+#[derive(Clone)]
+pub struct RentEscrow {
+    pub landlord: Address,
+    pub rent_amount: i128,
+    pub roommates: Map<Address, i128>,
+    pub contributions: Map<Address, i128>,
 }
 
 #[contract]
@@ -20,68 +33,99 @@ pub struct RentEscrowContract;
 
 #[contractimpl]
 impl RentEscrowContract {
-    /// Initialize the escrow contract.
+    /// Initialize the escrow with landlord, rent amount, and roommates.
     ///
-    /// Persists `landlord` and `amount` to ledger storage so that the values
+    /// Persists the escrow state to ledger storage so that the values
     /// survive across invocations and ledger closes.
-    ///
-    /// # Arguments
-    /// * `env`      - The Soroban environment handle.
-    /// * `landlord` - The `Address` of the landlord who controls the escrow.
-    /// * `amount`   - The escrowed amount in stroops (i128).
-    pub fn initialize(env: Env, landlord: Address, amount: i128) {
+    pub fn initialize(
+        env: Env,
+        landlord: Address,
+        rent_amount: i128,
+        roommates: Map<Address, i128>,
+    ) -> Result<(), Error> {
         landlord.require_auth();
 
-        // Persist landlord address to ledger storage.
-        env.storage().persistent().set(&DataKey::Landlord, &landlord);
+        if rent_amount <= 0 {
+            return Err(Error::InvalidAmount);
+        }
 
-        // Persist escrow amount to ledger storage.
-        env.storage().persistent().set(&DataKey::Amount, &amount);
+        env.storage().persistent().set(&DataKey::Escrow, &RentEscrow {
+            landlord,
+            rent_amount,
+            roommates,
+            contributions: Map::new(&env),
+        });
+
+        Ok(())
     }
 
-    /// Update the escrow amount.
-    ///
-    /// Reads the stored landlord from persistent storage and verifies that
-    /// `caller` matches before allowing the write.
-    ///
-    /// # Arguments
-    /// * `env`        - The Soroban environment handle.
-    /// * `caller`     - The invoker's `Address`; must equal the stored landlord.
-    /// * `new_amount` - Replacement escrow amount in stroops (i128).
-    pub fn set_amount(env: Env, caller: Address, new_amount: i128) {
-        caller.require_auth();
-        let landlord: Address = env.storage()
+    /// Roommates call this to contribute their share of the rent.
+    pub fn contribute(env: Env, from: Address, amount: i128) -> Result<(), Error> {
+        if amount <= 0 {
+            return Err(Error::InvalidAmount);
+        }
+
+        from.require_auth();
+
+        let mut escrow: RentEscrow = env.storage()
             .persistent()
-            .get(&DataKey::Landlord)
-            .expect("landlord not set");
-        assert_eq!(caller, landlord, "only the landlord can update the amount");
-        env.storage().persistent().set(&DataKey::Amount, &new_amount);
+            .get(&DataKey::Escrow)
+            .expect("escrow not initialized");
+
+        if !escrow.roommates.contains_key(from.clone()) {
+            return Err(Error::InvalidAmount);
+        }
+
+        let current: i128 = escrow.contributions.get(from.clone()).unwrap_or(0);
+        escrow.contributions.set(from.clone(), current + amount);
+
+        env.storage().persistent().set(&DataKey::Escrow, &escrow);
+
+        Ok(())
+    }
+
+    /// Release total rent to the landlord if fully funded.
+    pub fn release(env: Env) -> Result<(), Error> {
+        let escrow: RentEscrow = env.storage()
+            .persistent()
+            .get(&DataKey::Escrow)
+            .expect("escrow not initialized");
+
+        let mut total_contributed: i128 = 0;
+        for (_, amount) in escrow.contributions.iter() {
+            total_contributed += amount;
+        }
+
+        if total_contributed < escrow.rent_amount {
+            return Err(Error::InsufficientFunding);
+        }
+
+        // TODO: Transfer total_contributed tokens to escrow.landlord
+
+        Ok(())
     }
 
     /// Retrieve the landlord address from persistent storage.
-    ///
-    /// Panics with a descriptive message if `initialize` has not been called.
-    ///
-    /// # Returns
-    /// The `Address` of the landlord stored during initialization.
     pub fn get_landlord(env: Env) -> Address {
-        env.storage()
+        let escrow: RentEscrow = env.storage()
             .persistent()
-            .get(&DataKey::Landlord)
-            .expect("landlord not set; call initialize first")
+            .get(&DataKey::Escrow)
+            .expect("escrow not initialized; call initialize first");
+        escrow.landlord
     }
 
-    /// Retrieve the current escrow amount from persistent storage.
+    /// Retrieve the current rent amount from persistent storage.
     ///
-    /// Returns `0` if `initialize` has not yet been called, which is a safe
-    /// default for an unsigned integer-style amount field.
-    ///
-    /// # Returns
-    /// The escrowed amount in stroops as `i128`.
+    /// Returns 0 if the escrow has not been initialized.
     pub fn get_amount(env: Env) -> i128 {
-        env.storage()
+        let result: Option<RentEscrow> = env.storage()
             .persistent()
-            .get(&DataKey::Amount)
-            .unwrap_or(0)
+            .get(&DataKey::Escrow);
+        match result {
+            Some(escrow) => escrow.rent_amount,
+            None => 0,
+        }
     }
 }
+
+mod test;
