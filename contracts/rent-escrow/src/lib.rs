@@ -4,6 +4,10 @@ use soroban_sdk::{contract, contractimpl, contracttype, contracterror, Address, 
 /// Minimum rent amount in stroops/token-units to prevent micro-escrow spam
 pub const MIN_RENT: i128 = 100;
 
+/// Number of ledgers in a day, assuming ~5-second ledger close times
+/// (24 * 60 * 60) / 5 = 17280
+pub const DAY_IN_LEDGERS: u32 = 17280;
+
 //RentEscrow defined already
 /// Error types for the rent escrow contract.
 #[contracterror]
