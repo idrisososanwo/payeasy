@@ -86,3 +86,18 @@ fn test_get_balance() {
     client.contribute(&roommate_a, &150_i128);
     assert_eq!(client.get_balance(&roommate_a), 350_i128);
 }
+
+#[test]
+fn test_individual_token_refund() {
+    let env = Env::default();
+    let (client, _, roommate_a, _) = setup_escrow(&env);
+
+    // Roommate contributes
+    client.contribute(&roommate_a, &400_i128);
+    assert_eq!(client.get_balance(&roommate_a), 400_i128);
+
+    // Landlord triggers refund — balance resets to zero
+    let refund_amount = client.refund(&roommate_a);
+    assert_eq!(refund_amount, 400_i128);
+    assert_eq!(client.get_balance(&roommate_a), 0_i128);
+}

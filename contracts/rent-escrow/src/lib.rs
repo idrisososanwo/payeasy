@@ -15,6 +15,8 @@ pub const DAY_IN_LEDGERS: u32 = 17280;
 pub enum Error {
     InvalidAmount = 1,
     InsufficientFunding = 2,
+    NothingToRefund = 3,
+    NotARoommate = 4,
 }
 
 /// Storage key definitions for persistent contract state.
@@ -118,7 +120,7 @@ impl RentEscrowContract {
 
     /// Check whether the total contributions meet or exceed the rent goal.
     pub fn is_fully_funded(env: Env) -> bool {
-        let total_funded = Self::get_total_funded(env);
+        let total_funded = Self::get_total_funded(env.clone());
         let escrow: RentEscrow = env.storage()
             .persistent()
             .get(&DataKey::Escrow)
@@ -143,6 +145,33 @@ impl RentEscrowContract {
         // TODO: Transfer total_contributed tokens to escrow.landlord
 
         Ok(())
+    }
+
+    /// Refund a roommate's paid amount, resetting their balance to zero.
+    pub fn refund(env: Env, roommate: Address) -> Result<i128, Error> {
+        let landlord: Address = Self::get_landlord(env.clone());
+        landlord.require_auth();
+
+        let mut escrow: RentEscrow = env.storage()
+            .persistent()
+            .get(&DataKey::Escrow)
+            .expect("escrow not initialized");
+
+        let mut state = escrow.roommates.get(roommate.clone()).ok_or(Error::NotARoommate)?;
+        let refund_amount = state.paid;
+
+        if refund_amount <= 0 {
+            return Err(Error::NothingToRefund);
+        }
+
+        // Reset the roommate's paid balance
+        state.paid = 0;
+        escrow.roommates.set(roommate, state);
+        env.storage().persistent().set(&DataKey::Escrow, &escrow);
+
+        // TODO: token_client.transfer from contract to roommate once token is integrated
+
+        Ok(refund_amount)
     }
 
     /// Retrieve the landlord address from persistent storage.
