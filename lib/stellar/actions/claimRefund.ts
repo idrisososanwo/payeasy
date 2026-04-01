@@ -9,7 +9,7 @@
 import {
   Contract,
   Networks,
-  SorobanRpc,
+  rpc,
   TransactionBuilder,
   nativeToScVal,
   scValToNative,
@@ -17,7 +17,7 @@ import {
   BASE_FEE,
   Address,
 } from "@stellar/stellar-sdk";
-import { getPublicKey, signTransaction } from "@stellar/freighter-api";
+import { getAddress, signTransaction } from "@stellar/freighter-api";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -71,7 +71,7 @@ export async function assertDeadlineExpired(
   let nowSeconds: number;
 
   try {
-    const server = new SorobanRpc.Server(rpcUrl);
+    const server = new rpc.Server(rpcUrl);
     const latestLedger = await server.getLatestLedger();
     // Stellar ledgers close ~every 5 s; closeTime is a unix timestamp
     nowSeconds = (latestLedger as any).closeTime ?? Math.floor(Date.now() / 1000);
@@ -111,7 +111,7 @@ export async function claimRefund(
   }
 
   // Validate the connected wallet matches the expected roommate
-  const connectedKey = await getPublicKey();
+  const { address: connectedKey } = await getAddress();
   if (connectedKey !== roommateAddress) {
     throw new Error(
       `Connected wallet (${connectedKey.slice(0, 6)}…) does not match ` +
@@ -121,7 +121,7 @@ export async function claimRefund(
   }
 
   // ── 3. Build transaction ─────────────────────────────────────────────────
-  const server = new SorobanRpc.Server(RPC_URL);
+  const server = new rpc.Server(RPC_URL);
   const account = await server.getAccount(roommateAddress);
 
   const contract = new Contract(contractId);
@@ -138,11 +138,11 @@ export async function claimRefund(
   // ── 4. Simulate (get resource fees + footprint) ──────────────────────────
   const simResult = await server.simulateTransaction(tx);
 
-  if (SorobanRpc.Api.isSimulationError(simResult)) {
+  if (rpc.Api.isSimulationError(simResult)) {
     throw new Error(`Simulation failed: ${simResult.error}`);
   }
 
-  const preparedTx = SorobanRpc.assembleTransaction(tx, simResult).build();
+  const preparedTx = rpc.assembleTransaction(tx, simResult).build();
 
   // ── 5. Sign via Freighter ────────────────────────────────────────────────
   const { signedTxXdr } = await signTransaction(preparedTx.toXDR(), {
@@ -168,7 +168,7 @@ export async function claimRefund(
   let retries = 0;
 
   while (
-    getResult.status === SorobanRpc.Api.GetTransactionStatus.NOT_FOUND &&
+    getResult.status === rpc.Api.GetTransactionStatus.NOT_FOUND &&
     retries < MAX_RETRIES
   ) {
     await new Promise((r) => setTimeout(r, 1500));
@@ -176,7 +176,7 @@ export async function claimRefund(
     retries++;
   }
 
-  if (getResult.status !== SorobanRpc.Api.GetTransactionStatus.SUCCESS) {
+  if (getResult.status !== rpc.Api.GetTransactionStatus.SUCCESS) {
     throw new Error(
       `Transaction did not succeed. Status: ${getResult.status}`
     );
@@ -187,7 +187,7 @@ export async function claimRefund(
   const returnVal = getResult.returnValue;
   const refundedAmount: bigint = returnVal
     ? (scValToNative(returnVal) as bigint)
-    : 0n;
+    : BigInt(0);
 
   return {
     txHash,
@@ -202,7 +202,8 @@ export async function claimRefund(
 /** Convert stroops string → XLM string (7 decimal places) */
 export function stroopsToXlm(stroops: string): string {
   const n = BigInt(stroops);
-  const whole = n / 10_000_000n;
-  const frac = n % 10_000_000n;
+  const divisor = BigInt(10_000_000);
+  const whole = n / divisor;
+  const frac = n % divisor;
   return `${whole}.${frac.toString().padStart(7, "0")}`;
 }

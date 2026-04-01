@@ -1,6 +1,6 @@
-import { Contract, scValToNative, xdr } from "@stellar/stellar-sdk";
-import { getCurrentNetwork, getRpcUrl } from "./config";
-import { toStellarAmount, fromStellarAmount } from "./format.ts";
+import { Contract, scValToNative, nativeToScVal, xdr } from "@stellar/stellar-sdk";
+import { getCurrentNetwork, getNetworkConfig } from "./config";
+import { toStellarAmount, fromStellarAmount } from "./format";
 
 /**
  * Interaction helper for Stellar Asset Contracts (SAC)
@@ -23,7 +23,7 @@ export class TokenHelper {
       return scValToNative(response);
     } catch (error) {
       console.error("Failed to fetch balance:", error);
-      return 0n;
+      return BigInt(0);
     }
   }
 
@@ -39,7 +39,7 @@ export class TokenHelper {
       return scValToNative(response);
     } catch (error) {
       console.error("Failed to fetch allowance:", error);
-      return 0n;
+      return BigInt(0);
     }
   }
 
@@ -50,7 +50,7 @@ export class TokenHelper {
     const finalAmount = typeof amount === "bigint" ? amount : toStellarAmount(amount);
     return this.contract.call("approve", 
       xdr.ScVal.scvAddress(xdr.ScAddress.scAddressTypeAccount(xdr.PublicKey.publicKeyTypeEd25519(Buffer.from(spenderId)))),
-      xdr.ScVal.scvI128(xdr.Int128.fromBigInt(finalAmount))
+      nativeToScVal(finalAmount, { type: "i128" })
     );
   }
 
@@ -59,9 +59,9 @@ export class TokenHelper {
    */
   transfer(toId: string, amount: bigint | string | number) {
     const finalAmount = typeof amount === "bigint" ? amount : toStellarAmount(amount);
-    return this.contract.call("transfer", 
+    return this.contract.call("transfer",
       xdr.ScVal.scvAddress(xdr.ScAddress.scAddressTypeAccount(xdr.PublicKey.publicKeyTypeEd25519(Buffer.from(toId)))),
-      xdr.ScVal.scvI128(xdr.Int128.fromBigInt(finalAmount))
+      nativeToScVal(finalAmount, { type: "i128" })
     );
   }
 

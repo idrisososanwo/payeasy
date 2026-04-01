@@ -182,7 +182,7 @@ export default function MultiSigApproval({
           setApprovals((prev) => [...prev, approval]);
         } else {
           // Real Freighter wallet integration point
-          if (!window.freighter) {
+          if (!(window as any).freighter) {
             throw new Error("Freighter wallet not found. Please install it.");
           }
           const { signTransaction } = await import("@stellar/freighter-api");

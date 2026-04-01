@@ -10,12 +10,12 @@ import {
   Account,
   Contract,
   Networks,
-  SorobanRpc,
+  rpc,
   TransactionBuilder,
   scValToNative,
   BASE_FEE,
 } from "@stellar/stellar-sdk";
-import { getPublicKey, signTransaction } from "@stellar/freighter-api";
+import { getAddress, signTransaction } from "@stellar/freighter-api";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -60,7 +60,7 @@ export async function assertFullyFunded(
   landlordAddress: string,
   rpcUrl = RPC_URL
 ): Promise<void> {
-  const server = new SorobanRpc.Server(rpcUrl);
+  const server = new rpc.Server(rpcUrl);
 
   const account = await server.getAccount(landlordAddress).catch(() => new Account(landlordAddress, "0"));
   const contract = new Contract(contractId);
@@ -75,7 +75,7 @@ export async function assertFullyFunded(
 
   const simResult = await server.simulateTransaction(tx);
 
-  if (SorobanRpc.Api.isSimulationError(simResult)) {
+  if (rpc.Api.isSimulationError(simResult)) {
     throw new Error(`Funding check simulation failed: ${simResult.error}`);
   }
 
@@ -114,7 +114,7 @@ export async function releaseEscrow(
     throw new FreighterNotAvailableError();
   }
 
-  const connectedKey = await getPublicKey();
+  const { address: connectedKey } = await getAddress();
   if (connectedKey !== landlordAddress) {
     throw new Error(
       `Connected wallet (${connectedKey.slice(0, 6)}…) does not match ` +
@@ -124,7 +124,7 @@ export async function releaseEscrow(
   }
 
   // ── 3. Build transaction ─────────────────────────────────────────────────
-  const server = new SorobanRpc.Server(RPC_URL);
+  const server = new rpc.Server(RPC_URL);
   const account = await server.getAccount(landlordAddress);
 
   const contract = new Contract(contractId);
@@ -145,11 +145,11 @@ export async function releaseEscrow(
     throw new Error(`Simulation request failed: ${error.message}`);
   }
 
-  if (SorobanRpc.Api.isSimulationError(simResult)) {
+  if (rpc.Api.isSimulationError(simResult)) {
     throw new Error(`Simulation failed: ${simResult.error}`);
   }
 
-  const preparedTx = SorobanRpc.assembleTransaction(tx, simResult).build();
+  const preparedTx = rpc.assembleTransaction(tx, simResult).build();
 
   // ── 5. Sign via Freighter ────────────────────────────────────────────────
   let signedTxXdr: string;
@@ -184,7 +184,7 @@ export async function releaseEscrow(
   let retries = 0;
 
   while (
-    getResult.status === SorobanRpc.Api.GetTransactionStatus.NOT_FOUND &&
+    getResult.status === rpc.Api.GetTransactionStatus.NOT_FOUND &&
     retries < MAX_RETRIES
   ) {
     await new Promise((r) => setTimeout(r, 1500));
@@ -192,7 +192,7 @@ export async function releaseEscrow(
     retries++;
   }
 
-  if (getResult.status !== SorobanRpc.Api.GetTransactionStatus.SUCCESS) {
+  if (getResult.status !== rpc.Api.GetTransactionStatus.SUCCESS) {
     throw new Error(
       `Transaction did not succeed. Status: ${getResult.status}`
     );

@@ -7,7 +7,7 @@ import {
   nativeToScVal,
   rpc,
 } from "@stellar/stellar-sdk";
-import { signWithFreighter } from "@/lib/stellar/wallet";
+import { signTx } from "@/lib/stellar/wallet";
 
 const SOROBAN_RPC_URL = "https://soroban-testnet.stellar.org";
 
@@ -67,10 +67,10 @@ export async function contribute(
   ).build();
 
   // Sign with Freighter
-  const signedXdr = await signWithFreighter(
-    assembledTx.toXDR(),
-    Networks.TESTNET
-  );
+  const signedXdr = await signTx(assembledTx.toXDR(), "TESTNET");
+  if (!signedXdr) {
+    throw new Error("Transaction signing was rejected or failed");
+  }
 
   // Submit the signed transaction
   const signedTx = TransactionBuilder.fromXDR(

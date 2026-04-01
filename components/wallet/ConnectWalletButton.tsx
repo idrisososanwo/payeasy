@@ -1,15 +1,17 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Wallet, LogOut, Copy, Check, ChevronDown } from "lucide-react";
+import { Wallet, LogOut, Copy, Check, ChevronDown, ExternalLink } from "lucide-react";
 import { useStellarAuth } from "@/context/StellarContext";
 
 export default function ConnectWalletButton() {
-  const { publicKey, isConnected, connect, disconnect, isConnecting } = useStellarAuth();
+  const { publicKey, isConnected, connect, disconnect, isConnecting, isFreighterInstalled } = useStellarAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   const truncatedKey = publicKey
     ? `${publicKey.slice(0, 4)}...${publicKey.slice(-4)}`
@@ -42,7 +44,13 @@ export default function ConnectWalletButton() {
   if (!isConnected) {
     return (
       <button
-        onClick={connect}
+        onClick={() => {
+          if (!isFreighterInstalled) {
+            router.push("/connect");
+          } else {
+            connect();
+          }
+        }}
         disabled={isConnecting}
         className="btn-primary !py-2.5 !px-5 !text-sm !rounded-lg flex items-center gap-2 group transition-all hover:scale-105 active:scale-95 disabled:opacity-50"
       >
@@ -88,8 +96,16 @@ export default function ConnectWalletButton() {
                 <span>{copied ? "Copied!" : "Copy Address"}</span>
               </button>
               
+              <button
+                onClick={() => { setIsOpen(false); router.push("/connect"); }}
+                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-dark-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+              >
+                <ExternalLink size={16} />
+                <span>Wallet Dashboard</span>
+              </button>
+
               <div className="h-px bg-white/5 my-1" />
-              
+
               <button
                 onClick={handleDisconnect}
                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors"

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { StellarProvider } from "@/context/StellarContext";
+import { AppShell } from "@/components/ui/app-shell";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -29,12 +29,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
-        <div className="mesh-gradient" aria-hidden="true" />
-        <StellarProvider>
-          <div className="relative z-10">{children}</div>
-        </StellarProvider>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
