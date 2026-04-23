@@ -7,6 +7,7 @@ import { createEscrow } from "@/lib/mock/escrow";
 import { getExplorerLink, type ExplorerProvider } from "@/lib/stellar/explorer";
 
 import { useFormDraft } from "@/hooks/useFormDraft";
+import { useBeforeUnload } from "@/hooks/useBeforeUnload";
 import RoommateInput from "./RoommateInput";
 import {
   calculateRemainingAmount,
@@ -119,6 +120,13 @@ export default function CreateEscrowForm({
 }: CreateEscrowFormProps) {
   const router = useRouter();
   const [step, setStep] = useState(1);
+  const initialValues: EscrowFormDraft = useMemo(() => ({
+    totalRent: "",
+    tokenId: "",
+    deadlineDate: "",
+    roommates: [createRoommate()],
+  }), []);
+
   const {
     values: draft,
     setValues: setDraft,
@@ -128,13 +136,23 @@ export default function CreateEscrowForm({
     clearDraft,
   } = useFormDraft<EscrowFormDraft>({
     key: "escrow_create_draft",
-    initialValues: {
-      totalRent: "",
-      tokenId: "",
-      deadlineDate: "",
-      roommates: [createRoommate()],
-    },
+    initialValues,
   });
+
+  const isDirty = useMemo(() => {
+    // Basic dirty check: check if any field has been touched
+    const isBaseRoommateDirty = (r: RoommateInputValue) => r.address !== "" || r.shareAmount !== "";
+    
+    return draft.totalRent !== "" || 
+           draft.tokenId !== "" || 
+           draft.deadlineDate !== "" || 
+           draft.roommates.length > 1 ||
+           (draft.roommates.length === 1 && isBaseRoommateDirty(draft.roommates[0]));
+  }, [draft]);
+
+  // Warn before unload if there are unsaved changes and we haven't submitted
+  useBeforeUnload(isDirty && !submission);
+
   const [errors, setErrors] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submission, setSubmission] = useState<SubmissionState | null>(null);
@@ -227,7 +245,8 @@ export default function CreateEscrowForm({
       setErrors([]);
 
       // Call the mock service
-      const { contractId } = await createEscrow();
+      const result = await createEscrow();
+      setSubmission(result);
 
       // Clear draft on successful submission
       clearDraft();
