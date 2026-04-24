@@ -22,7 +22,7 @@ describe("Freighter wallet logic", () => {
   });
 
   describe("wallet connection", () => {
-    test("returns public key on successful connect", async () => {
+    it("returns public key on successful connect", async () => {
       const testKey = "GABC1234567890TESTKEY";
       const mockConnectWallet = async () => testKey;
 
@@ -68,7 +68,7 @@ describe("Freighter wallet logic", () => {
       assert.strictEqual(publicKey, testKey);
     });
 
-    test("goes from connected to disconnected on disconnect", async () => {
+    it("goes from connected to disconnected on disconnect", async () => {
       const testKey = "GABC1234567890TESTKEY";
       let publicKey: string | null = testKey;
 

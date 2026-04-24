@@ -117,6 +117,13 @@ export function hasDuplicateRoommateAddresses(
   return findDuplicateRoommateIds(roommates).size > 0;
 }
 
+export function assignSupportedToken(
+  draft: EscrowFormDraft,
+  token: SupportedToken
+): EscrowFormDraft {
+  return { ...draft, tokenAddress: token.issuer };
+}
+
 export function formatFeeEstimate(feeXlm: string | null | undefined): string {
   if (!feeXlm) {
     return "Fee unavailable";
