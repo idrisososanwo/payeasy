@@ -82,7 +82,7 @@ const MOCK_TRANSACTIONS: Transaction[] = [
  */
 export default function HistoryPage() {
   return (
-    <main className="min-h-screen pt-28 pb-20 relative overflow-hidden bg-[#0a0a0f]">
+    <main id="main-content" className="min-h-screen pt-28 pb-20 relative overflow-hidden bg-[#0a0a0f]">
       {/* Background aesthetics */}
       <div className="mesh-gradient opacity-40 mix-blend-screen pointer-events-none fixed inset-0" />
       <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-brand-500/10 blur-[150px] rounded-full pointer-events-none" />

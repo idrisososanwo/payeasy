@@ -10,6 +10,7 @@ import { ChevronLeft, ExternalLink, ShieldCheck, Activity, Globe } from "lucide-
 import Link from "next/link";
 import { getExplorerLink } from "@/lib/stellar/explorer";
 import { createLandlordMajorityConfig } from "@/lib/stellar/multisig";
+import RefreshIndicator from "@/components/escrow/RefreshIndicator";
 
 interface Props {
   contractId: string;
@@ -32,41 +33,46 @@ export default function EscrowDashboardClient({ contractId }: Props) {
 
   useEffect(() => {
     // Artificial 3s delay to verify skeleton renders before content
-    const timer = setTimeout(() => {
-      setContractState({
-        id: contractId,
-        landlord: "GD7K4X5L7P2Q9F6N1M3R8S4T0U1V2W3X4Y5Z6A7B8C9D0E1F2G",
-        totalRent: "1250",
-        deadline: "April 05, 2026",
-        status: "active",
-        totalFunded: 775,
-        lastUpdate: new Date().toISOString(),
-        roommates: [
-          {
-            address: "GA3X2Y1Z0W9V8U7T6S5R4Q3P2O1N0M9L8K7J6I5H4G3F2E1D0C",
-            expectedShare: "450",
-            paidAmount: "450",
-            isPaid: true,
-          },
-          {
-            address: "GB5X4Y3Z2W1V0U9T8S7R6Q5P4O3N2M1L0K9J8I7H6G5F4E3D2C",
-            expectedShare: "450",
-            paidAmount: "325",
-            isPaid: false,
-          },
-          {
-            address: "GC7X6Y5Z4W3V2U1T0S9R8Q7P6O5N4M3L2K1J0I9H8G7F6E5D4C",
-            expectedShare: "350",
-            paidAmount: "0",
-            isPaid: false,
-          },
-        ],
-      });
-      setIsLoading(false);
-    }, 3000);
-
-    return () => clearTimeout(timer);
+    fetchData();
   }, [contractId]);
+
+  const fetchData = async () => {
+    return new Promise<void>((resolve) => {
+      setTimeout(() => {
+        setContractState({
+          id: contractId,
+          landlord: "GD7K4X5L7P2Q9F6N1M3R8S4T0U1V2W3X4Y5Z6A7B8C9D0E1F2G",
+          totalRent: "1250",
+          deadline: "April 05, 2026",
+          status: "active",
+          totalFunded: 775,
+          lastUpdate: new Date().toISOString(),
+          roommates: [
+            {
+              address: "GA3X2Y1Z0W9V8U7T6S5R4Q3P2O1N0M9L8K7J6I5H4G3F2E1D0C",
+              expectedShare: "450",
+              paidAmount: "450",
+              isPaid: true,
+            },
+            {
+              address: "GB5X4Y3Z2W1V0U9T8S7R6Q5P4O3N2M1L0K9J8I7H6G5F4E3D2C",
+              expectedShare: "450",
+              paidAmount: "325",
+              isPaid: false,
+            },
+            {
+              address: "GC7X6Y5Z4W3V2U1T0S9R8Q7P6O5N4M3L2K1J0I9H8G7F6E5D4C",
+              expectedShare: "350",
+              paidAmount: "0",
+              isPaid: false,
+            },
+          ],
+        });
+        setIsLoading(false);
+        resolve();
+      }, 1000);
+    });
+  };
 
   const multiSigConfig = contractState
     ? createLandlordMajorityConfig({
@@ -77,7 +83,7 @@ export default function EscrowDashboardClient({ contractId }: Props) {
     : null;
 
   return (
-    <main className="min-h-screen pt-32 pb-24 relative overflow-hidden bg-[#07070a]">
+    <main id="main-content" className="min-h-screen pt-32 pb-24 relative overflow-hidden bg-[#07070a]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(92,124,250,0.1),transparent_50%)] pointer-events-none" />
       <div className="mesh-gradient opacity-30 mix-blend-screen pointer-events-none fixed inset-0 saturate-150" />
 
@@ -137,10 +143,7 @@ export default function EscrowDashboardClient({ contractId }: Props) {
               <span className="text-white font-black italic">Stellar Ledger</span>.
             </p>
             <div className="h-16 w-px bg-gradient-to-b from-white/10 via-white/5 to-transparent hidden md:block" />
-            <div className="space-y-1">
-              <p className="text-[10px] text-dark-600 uppercase tracking-[0.2em] font-black">Refreshed</p>
-              <p className="text-xs text-dark-200 font-mono font-bold uppercase tracking-widest mt-1">14s ago</p>
-            </div>
+            <RefreshIndicator onRefresh={fetchData} />
           </div>
         </header>
 
