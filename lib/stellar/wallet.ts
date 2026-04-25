@@ -1,7 +1,13 @@
-// @stellar/freighter-api is a CJS module; default import avoids Node ESM named-export error
 import freighterApi from "@stellar/freighter-api";
-const { isConnected, isAllowed, setAllowed, requestAccess, getAddress, signTransaction } =
-  freighterApi as typeof import("@stellar/freighter-api");
+
+const {
+  isConnected,
+  isAllowed,
+  setAllowed,
+  requestAccess,
+  getAddress,
+  signTransaction,
+} = freighterApi;
 import { getCurrentNetwork } from "./config.ts";
 
 /**
@@ -64,6 +70,19 @@ export async function getPublicKey(): Promise<string | null> {
 }
 
 /**
+ * Returns the network Freighter is currently connected to (e.g. "TESTNET", "PUBLIC").
+ */
+export async function getFreighterNetwork(): Promise<string | null> {
+  try {
+    const result = await freighterApi.getNetwork();
+    if ("error" in result && result.error) return null;
+    return result.network || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Signs a transaction XDR using Freighter.
  */
 export async function signTx(xdr: string, network?: string): Promise<string | null> {
@@ -83,34 +102,6 @@ export async function signTx(xdr: string, network?: string): Promise<string | nu
     return result.signedTxXdr;
   } catch (error) {
     console.error("Freighter signing failed:", error);
-    return null;
-  }
-}
-
-/**
- * Gets the current network of the connected Freighter wallet.
- * Returns "TESTNET" or "MAINNET" if connected and network can be determined.
- * Returns null if Freighter is not available, not connected, or network cannot be determined.
- */
-export async function getFreighterNetwork(): Promise<"TESTNET" | "MAINNET" | null> {
-  if (typeof window === "undefined") return null;
-  try {
-    // Check if Freighter is connected
-    const connected = await isConnected();
-    if (!connected.isConnected) return null;
-
-    // Try to get the network from the Freighter API
-    const freighterModule = await import("@stellar/freighter-api");
-    if (typeof freighterModule.getNetwork === "function") {
-      const network = await freighterModule.getNetwork();
-      // Normalize to uppercase
-      return network.toUpperCase() as "TESTNET" | "MAINNET";
-    } else {
-      // Fallback: if getNetwork is not available, we cannot determine the network
-      return null;
-    }
-  } catch (error) {
-    console.error("Failed to get Freighter network:", error);
     return null;
   }
 }

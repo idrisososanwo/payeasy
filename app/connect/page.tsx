@@ -64,6 +64,8 @@ export default function ConnectWalletPage() {
   const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
   const [errorExpanded, setErrorExpanded] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [freighterNetwork, setFreighterNetwork] = useState<string | null>(null);
+  const [checkingNetwork, setCheckingNetwork] = useState(false);
 
   useEffect(() => {
     if (isConnected && publicKey) {
