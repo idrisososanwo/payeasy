@@ -3,6 +3,8 @@
 import { useState, useMemo } from "react";
 import TransactionCard, { type Transaction } from "./TransactionCard";
 import DateRangeFilter from "./DateRangeFilter";
+import { Search, Filter, ArrowRight, ArrowLeft, Download } from "lucide-react";
+import { exportTransactionsToCsv } from "@/lib/exportCsv";
 import TypeFilter, { type TypeFilterValue } from "./TypeFilter";
 import { Search, ArrowRight, ArrowLeft } from "lucide-react";
 
@@ -117,6 +119,13 @@ export default function TransactionList({ initialTransactions }: TransactionList
             </div>
             <button className="flex-1 md:flex-none btn-secondary !py-2.5 !px-4 !text-xs !bg-dark-900/40 !border-white/10 hover:!border-white/20">
               Latest First
+            </button>
+            <button 
+              onClick={() => exportTransactionsToCsv(filteredTransactions)}
+              className="flex-1 md:flex-none btn-primary !py-2.5 !px-4 !text-xs shadow-lg shadow-brand-500/20"
+            >
+              <Download className="h-3.5 w-3.5" />
+              Export CSV
             </button>
           </div>
         </div>
