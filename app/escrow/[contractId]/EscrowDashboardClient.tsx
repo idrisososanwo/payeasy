@@ -5,6 +5,7 @@ import EscrowStatus from "@/components/escrow/EscrowStatus";
 import FundingProgress from "@/components/escrow/FundingProgress";
 import MultiSigApproval from "@/components/escrow/MultiSigApproval";
 import RoommateList from "@/components/escrow/RoommateList";
+import ContributeForm from "@/components/escrow/ContributeForm";
 import EscrowDashboardSkeleton from "@/components/escrow/EscrowDashboardSkeleton";
 import TransactionReview from "@/components/wallet/TransactionReview";
 import {
@@ -306,6 +307,20 @@ export default function EscrowDashboardClient({ contractId }: Props) {
               </div>
 
               <RoommateList roommates={contractState!.roommates} />
+
+              {/* Contribute Form — visible only to the current roommate if they haven't paid full share */}
+              {currentRoommate && !currentRoommate.isPaid && contractState?.status !== "funded" && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                  <ContributeForm
+                    escrowId={contractId}
+                    expectedShare={currentRoommate.expectedShare}
+                    remainingBalance={(
+                      Number(currentRoommate.expectedShare) - Number(currentRoommate.paidAmount)
+                    ).toFixed(2).replace(/\.00$/, "")}
+                    onSuccess={() => void refresh()}
+                  />
+                </div>
+              )}
 
               {/* Claim Refund — visible only when eligible */}
               {showClaimRefundButton && (
