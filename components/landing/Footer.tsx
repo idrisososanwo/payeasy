@@ -1,4 +1,7 @@
-import { Github, Twitter } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { Github, Twitter, ChevronDown } from "lucide-react";
 import Link from "next/link";
 
 const footerLinks = {
@@ -22,7 +25,24 @@ const footerLinks = {
   ],
 };
 
+interface AccordionState {
+  [key: string]: boolean;
+}
+
 export default function Footer() {
+  const [expandedCategories, setExpandedCategories] = useState<AccordionState>({
+    Product: true,
+    Resources: true,
+    Community: true,
+  });
+
+  const toggleCategory = (category: string) => {
+    setExpandedCategories((prev) => ({
+      ...prev,
+      [category]: !prev[category],
+    }));
+  };
+
   return (
     <footer className="border-t border-white/5 pt-16 pb-8 px-6">
       <div className="max-w-7xl mx-auto">
@@ -61,13 +81,37 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Link Columns */}
+          {/* Link Columns - Accordion on mobile, regular grid on desktop */}
           {Object.entries(footerLinks).map(([category, links]) => (
-            <div key={category}>
-              <h4 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider">
+            <div key={category} className="lg:block">
+              {/* Mobile accordion header */}
+              <button
+                onClick={() => toggleCategory(category)}
+                className="lg:hidden w-full flex items-center justify-between mb-3"
+                aria-expanded={expandedCategories[category]}
+              >
+                <h4 className="text-sm font-semibold text-white uppercase tracking-wider">
+                  {category}
+                </h4>
+                <ChevronDown
+                  size={16}
+                  className={`transition-transform duration-200 ${
+                    expandedCategories[category] ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {/* Desktop header (always visible) */}
+              <h4 className="hidden lg:block text-sm font-semibold text-white mb-4 uppercase tracking-wider">
                 {category}
               </h4>
-              <ul className="space-y-3">
+
+              {/* Link list - collapsible on mobile */}
+              <ul
+                className={`space-y-3 lg:block ${
+                  expandedCategories[category] ? "block" : "hidden"
+                }`}
+              >
                 {links.map((link) => (
                   <li key={link.name}>
                     <a

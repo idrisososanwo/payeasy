@@ -312,17 +312,17 @@ export function PayEasyHero({
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.9 }}
-              className="mt-16 glass-card flex flex-col sm:flex-row items-center justify-center divide-y sm:divide-y-0 sm:divide-x divide-white/5 px-4 sm:px-0"
+              className="mt-16 glass-card flex flex-col sm:flex-row items-center justify-center divide-y sm:divide-y-0 sm:divide-x divide-white/5 w-full"
             >
               {stats.map((stat, index) => (
                 <div
                   key={index}
-                  className="flex flex-col items-center py-5 sm:py-6 px-8 sm:px-12"
+                  className="flex flex-col items-center justify-center py-6 px-6 sm:px-8 lg:px-12 w-full sm:w-auto"
                 >
-                  <span className="gradient-text font-display font-bold text-2xl">
+                  <span className="gradient-text font-display font-bold text-2xl sm:text-3xl whitespace-nowrap">
                     {stat.value}
                   </span>
-                  <span className="text-[13px] text-dark-600 mt-1">
+                  <span className="text-[13px] text-dark-600 mt-2 text-center break-words">
                     {stat.label}
                   </span>
                 </div>
