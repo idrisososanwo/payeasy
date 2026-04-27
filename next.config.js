@@ -40,12 +40,16 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "i.pravatar.cc",
+        pathname: "/**",
       },
       {
         protocol: "https",
         hostname: "images.unsplash.com",
+        pathname: "/**",
       },
     ],
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 3600,
   },
   async headers() {
     return [

@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Wallet } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ConnectWalletButton from "@/components/wallet/ConnectWalletButton";
+import { useActiveSection } from "@/hooks/useActiveSection";
 
 export default function Navbar() {
+  const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -15,6 +18,8 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const activeSection = useActiveSection(["features", "how-it-works", "stellar"]);
+
   const navLinks = [
     { name: "Features", href: "#features" },
     { name: "How It Works", href: "#how-it-works" },
@@ -23,6 +28,7 @@ export default function Navbar() {
 
   return (
     <nav
+      aria-label="Main Navigation"
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         isScrolled
           ? "glass py-3 shadow-lg shadow-black/20"
@@ -42,21 +48,37 @@ export default function Navbar() {
 
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <a
-              key={link.name}
-              href={link.href}
-              className="text-dark-400 hover:text-white transition-colors duration-300 text-sm font-medium"
-            >
-              {link.name}
-            </a>
-          ))}
+          {navLinks.map((link) => {
+            const isActive = activeSection === link.href.replace("#", "");
+            return (
+              <a
+                key={link.name}
+                href={link.href}
+                className={`relative text-sm font-medium transition-all duration-300 ${
+                  isActive ? "text-white" : "text-dark-400 hover:text-white"
+                }`}
+              >
+                {link.name}
+                {isActive && (
+                  <span className="absolute -bottom-1.5 left-0 right-0 h-0.5 bg-brand-500 rounded-full animate-in fade-in slide-in-from-bottom-1 duration-300" />
+                )}
+              </a>
+            );
+          })}
         </div>
 
         {/* CTA Buttons */}
         <div className="hidden md:flex items-center gap-3">
           <a href="#" className="btn-secondary !py-2.5 !px-5 !text-sm !rounded-lg">
             Sign In
+          </a>
+          <a
+            href="#"
+            className="btn-primary !py-2.5 !px-5 !text-sm !rounded-lg"
+            onMouseEnter={() => router.prefetch("/connect")}
+          >
+            <Wallet size={16} />
+            Connect Wallet
           </a>
           <ConnectWalletButton />
         </div>
@@ -88,6 +110,14 @@ export default function Navbar() {
             <div className="h-px bg-white/10 my-2" />
             <a href="#" className="btn-secondary !justify-center">
               Sign In
+            </a>
+            <a
+              href="#"
+              className="btn-primary !justify-center"
+              onMouseEnter={() => router.prefetch("/connect")}
+            >
+              <Wallet size={16} />
+              Connect Wallet
             </a>
             <div className="flex justify-center">
               <ConnectWalletButton />

@@ -14,10 +14,9 @@ import RoommateInput from "./RoommateInput";
 import { FieldError, fieldBorderClass } from "@/components/ui/field-error";
 import { DateInput } from "@/components/ui/date-input";
 import { isDateOnOrAfterTomorrow } from "@/components/ui/date-input.helpers";
+import { StepIndicator } from "@/components/ui/step-indicator";
 import {
-  DUPLICATE_ROOMMATE_ADDRESS_MESSAGE,
   calculateRemainingAmount,
-  findDuplicateRoommateIds,
   formatFeeEstimate,
   hasExactShareAllocation,
   nextEscrowStep,
@@ -152,7 +151,7 @@ export default function CreateEscrowForm({
     const isBaseRoommateDirty = (r: RoommateInputValue) => r.address !== "" || r.shareAmount !== "";
     
     return draft.totalRent !== "" || 
-           draft.tokenAddress !== "" ||
+           draft.tokenAddress !== "" || 
            draft.deadlineDate !== "" || 
            draft.roommates.length > 1 ||
            (draft.roommates.length === 1 && isBaseRoommateDirty(draft.roommates[0]));
@@ -182,11 +181,7 @@ export default function CreateEscrowForm({
       if (!draft.tokenAddress.trim()) errs.tokenAddress = "Required";
     }
     if (step === 2 || step === 4) {
-      if (!toLedgerTimestamp(draft.deadlineDate)) {
-        errs.deadlineDate = "Set a valid deadline date.";
-      } else if (!isDateOnOrAfterTomorrow(draft.deadlineDate)) {
-        errs.deadlineDate = "Deadline must be tomorrow or later.";
-      }
+      if (!toLedgerTimestamp(draft.deadlineDate)) errs.deadlineDate = "Set a valid deadline date.";
     }
     return errs;
   }
@@ -266,11 +261,6 @@ export default function CreateEscrowForm({
     () => draft.roommates.some((r) => !r.address.trim()),
     [draft.roommates]
   );
-  const duplicateRoommateIds = useMemo(
-    () => findDuplicateRoommateIds(draft.roommates),
-    [draft.roommates]
-  );
-  const hasDuplicateRoommates = duplicateRoommateIds.size > 0;
 
   const currentStepLabel = STEP_LABELS[step - 1];
 
@@ -312,10 +302,6 @@ export default function CreateEscrowForm({
         setRoommateErrors(re);
         return;
       }
-      if (hasDuplicateRoommates) {
-        setErrors([DUPLICATE_ROOMMATE_ADDRESS_MESSAGE]);
-        return;
-      }
       const validation = validateEscrowStep(step, draft);
       if (!validation.isValid) {
         setErrors(validation.errors);
@@ -336,11 +322,6 @@ export default function CreateEscrowForm({
   }
 
   async function handleConfirm(): Promise<void> {
-    if (hasDuplicateRoommates) {
-      setErrors([DUPLICATE_ROOMMATE_ADDRESS_MESSAGE]);
-      return;
-    }
-
     const validation = validateEscrowStep(4, draft);
     if (!validation.isValid) {
       setErrors(validation.errors);
@@ -405,7 +386,10 @@ export default function CreateEscrowForm({
   }
 
   return (
-    <section className="max-w-3xl mx-auto rounded-3xl glass p-6 sm:p-8">
+    <section className="max-w-3xl mx-auto rounded-3xl glass overflow-hidden transition-all duration-500">
+      <StepIndicator steps={STEP_LABELS} currentStep={step} />
+      
+      <div className="p-6 sm:p-8 pt-0">
       {hasDraft && (
         <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border border-brand-400/40 bg-brand-500/10 p-4 text-sm animate-fade-in">
           <p className="text-brand-100 font-medium">You have an unsaved draft. Resume?</p>
@@ -440,28 +424,6 @@ export default function CreateEscrowForm({
         </p>
       </header>
 
-      <div className="mb-8 grid grid-cols-4 gap-2">
-        {STEP_LABELS.map((label, index) => {
-          const stepNumber = index + 1;
-          const isComplete = stepNumber < step;
-          const isCurrent = stepNumber === step;
-
-          return (
-            <div
-              key={label}
-              className={`rounded-xl border px-3 py-2 text-center text-xs sm:text-sm ${
-                isCurrent
-                  ? "border-brand-400 bg-brand-500/20 text-brand-100"
-                  : isComplete
-                    ? "border-accent-400/60 bg-accent-500/15 text-accent-100"
-                    : "border-white/10 bg-white/5 text-dark-500"
-              }`}
-            >
-              {label}
-            </div>
-          );
-        })}
-      </div>
 
       {errors.length > 0 ? (
         <div className="mb-6 rounded-xl border border-red-400/40 bg-red-500/10 p-3 text-sm text-red-200">
@@ -522,20 +484,24 @@ export default function CreateEscrowForm({
         ) : null}
 
         {step === 2 ? (
-          <div className="space-y-2">
+          <div className="space-y-1">
             <label htmlFor="deadline-date" className="block text-sm text-dark-400">
               Escrow Deadline
             </label>
-            <DateInput
+            <input
               id="deadline-date"
+              type="date"
               value={draft.deadlineDate}
-              onChange={(next) => {
-                setDraft((current) => ({ ...current, deadlineDate: next }));
-                if (next) clearFieldError("deadlineDate");
+              onChange={(event) => {
+                setDraft((current) => ({ ...current, deadlineDate: event.target.value }));
+                if (event.target.value) clearFieldError("deadlineDate");
               }}
-              error={fieldErrors.deadlineDate}
+              aria-describedby={fieldErrors.deadlineDate ? "deadline-date-error" : undefined}
+              aria-invalid={!!fieldErrors.deadlineDate}
+              className={`w-full rounded-xl border bg-white/5 px-4 py-3 text-dark-100 focus:outline-none transition-colors ${fieldBorderClass(fieldErrors.deadlineDate, !!draft.deadlineDate)}`}
             />
-            <p className="text-xs text-dark-500">
+            <FieldError id="deadline-date-error" message={fieldErrors.deadlineDate} />
+            <p className="text-sm text-dark-500">
               Ledger timestamp: {deadlineLedgerTimestamp ?? "-"}
             </p>
           </div>
@@ -543,37 +509,20 @@ export default function CreateEscrowForm({
 
         {step === 3 ? (
           <>
-            {hasDuplicateRoommates && (
-              <div
-                role="alert"
-                data-testid="duplicate-roommate-toast"
-                className="rounded-xl border border-amber-400/40 bg-amber-500/10 p-3 text-sm text-amber-200 animate-fade-in"
-              >
-                {DUPLICATE_ROOMMATE_ADDRESS_MESSAGE}
-              </div>
-            )}
-
             <div className="space-y-4">
-              {draft.roommates.map((roommate, index) => {
-                const baseErrors = roommateErrors[roommate.id];
-                const effectiveErrors = duplicateRoommateIds.has(roommate.id)
-                  ? { ...baseErrors, address: DUPLICATE_ROOMMATE_ADDRESS_MESSAGE }
-                  : baseErrors;
-
-                return (
-                  <RoommateInput
-                    key={roommate.id}
-                    roommate={roommate}
-                    index={index}
-                    totalRent={draft.totalRent}
-                    onChange={handleRoommateChange}
-                    onRemove={handleRoommateRemove}
-                    disableRemove={draft.roommates.length === 1}
-                    errors={effectiveErrors}
-                    onClearError={clearRoommateError}
-                  />
-                );
-              })}
+              {draft.roommates.map((roommate, index) => (
+                <RoommateInput
+                  key={roommate.id}
+                  roommate={roommate}
+                  index={index}
+                  totalRent={draft.totalRent}
+                  onChange={handleRoommateChange}
+                  onRemove={handleRoommateRemove}
+                  disableRemove={draft.roommates.length === 1}
+                  errors={roommateErrors[roommate.id]}
+                  onClearError={clearRoommateError}
+                />
+              ))}
             </div>
 
             <button
@@ -697,7 +646,7 @@ export default function CreateEscrowForm({
           <button
             type="button"
             onClick={handleNext}
-            disabled={step === 3 && hasDuplicateRoommates}
+            disabled={step === 3 && hasInvalidAddress}
             className="btn-primary !px-5 !py-2.5 !text-sm disabled:opacity-60 disabled:cursor-not-allowed"
           >
             Continue
@@ -708,13 +657,14 @@ export default function CreateEscrowForm({
             onClick={() => {
               void handleConfirm();
             }}
-            disabled={isSubmitting || hasDuplicateRoommates}
+            disabled={isSubmitting}
             className="btn-primary !px-5 !py-2.5 !text-sm disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isSubmitting ? "Submitting..." : "Create Escrow"}
           </button>
         )}
       </footer>
+      </div>
     </section>
   );
 }
