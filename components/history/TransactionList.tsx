@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { Search, Download, Loader2 } from "lucide-react";
 import TransactionCard, { type Transaction } from "./TransactionCard";
+import TransactionDetailModal from "./TransactionDetailModal";
 import DateRangeFilter from "./DateRangeFilter";
 import TypeFilter, { type TypeFilterValue } from "./TypeFilter";
 import { exportTransactionsToCsv } from "@/lib/exportCsv";
@@ -31,6 +32,13 @@ export default function TransactionList({
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [typeFilter, setTypeFilter] = useState<TypeFilterValue>("all");
+  const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleCardClick = (tx: Transaction) => {
+    setSelectedTx(tx);
+    setIsModalOpen(true);
+  };
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter((tx) => {
@@ -131,6 +139,7 @@ export default function TransactionList({
               key={tx.id}
               transaction={tx}
               isNew={newBadgeHashes.includes(tx.txHash)}
+              onClick={handleCardClick}
             />
           ))}
         </div>
@@ -197,6 +206,11 @@ export default function TransactionList({
           </p>
         )}
       </div>
+      <TransactionDetailModal
+        transaction={selectedTx}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 }

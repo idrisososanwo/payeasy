@@ -99,7 +99,13 @@ export function StellarProvider({ children }: { children: React.ReactNode }) {
         throw new Error("Freighter extension not found. Please install it to continue.");
       }
 
-      const key = await connectFreighter();
+      const key = await Promise.race([
+        connectFreighter(),
+        new Promise<null>((_, reject) =>
+          setTimeout(() => reject(new Error("Connection timed out")), 30000)
+        ),
+      ]);
+
       if (key) {
         setPublicKey(key);
         setIsConnected(true);

@@ -1,91 +1,40 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { useParams } from "next/navigation";
-import Link from "next/link";
-import { RefreshCw } from "lucide-react";
-import EventLog from "@/components/escrow/EventLog";
-import { getContractEvents, ContractEvent } from "@/lib/stellar/events";
+import { useEscrowEvents, EscrowEvent } from "@/hooks/useEscrowEvents";
 
-const POLL_INTERVAL_MS = 30_000;
+export default function EscrowPage() {
+  const { contractId } = useParams<{ contractId: string }>();
+  const [events, setEvents] = useState<EscrowEvent[]>([]);
 
-export default function EscrowContractPage() {
-  const params = useParams();
-  const contractId = typeof params.contractId === "string" ? params.contractId : "";
+  const handleEvent = useCallback((event: EscrowEvent) => {
+    setEvents((prev) => [event, ...prev]);
+  }, []);
 
-  const [events, setEvents] = useState<ContractEvent[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [lastFetched, setLastFetched] = useState<Date | null>(null);
-
-  const fetchEvents = useCallback(async () => {
-    if (!contractId) return;
-    const fresh = await getContractEvents(contractId);
-    // Prepend truly new events (keep reverse-chronological order)
-    setEvents((prev) => {
-      const existingIds = new Set(prev.map((e) => e.id));
-      const newOnes = fresh.filter((e) => !existingIds.has(e.id));
-      return [...newOnes, ...prev];
-    });
-    setLastFetched(new Date());
-    setIsLoading(false);
-  }, [contractId]);
-
-  useEffect(() => {
-    fetchEvents();
-    const timer = setInterval(fetchEvents, POLL_INTERVAL_MS);
-    return () => clearInterval(timer);
-  }, [fetchEvents]);
+  useEscrowEvents({ contractId, onEvent: handleEvent });
 
   return (
-    <main className="min-h-screen pt-24 pb-16 px-6">
-      <div className="max-w-3xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
-          <div className="min-w-0">
-            <h1 className="text-3xl font-bold text-white">Escrow Dashboard</h1>
-            <p className="text-dark-500 mt-1 text-sm font-mono truncate max-w-xs sm:max-w-lg">
-              {contractId}
-            </p>
-          </div>
-          <button
-            onClick={fetchEvents}
-            className="btn-secondary !py-2 !px-4 !text-sm !rounded-lg flex items-center gap-2"
-            aria-label="Refresh events"
-          >
-            <RefreshCw size={14} />
-            Refresh
-          </button>
-        </div>
+    <main className="max-w-2xl mx-auto px-6 py-16">
+      <h1 className="text-2xl font-bold text-white mb-2">Escrow Contract</h1>
+      <p className="text-dark-400 text-sm font-mono break-all mb-8">{contractId}</p>
 
-        {/* Event Log */}
-        <section className="glass-card p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-semibold text-white">Event Log</h2>
-            {lastFetched && (
-              <p className="text-dark-600 text-xs">
-                Updated {lastFetched.toLocaleTimeString()}
+      <h2 className="text-lg font-semibold text-white mb-4">Live Event Log</h2>
+
+      {events.length === 0 ? (
+        <p className="text-dark-500 text-sm">Listening for transactions…</p>
+      ) : (
+        <ul className="space-y-3">
+          {events.map((ev) => (
+            <li key={ev.id} className="glass-card p-4 rounded-xl">
+              <p className="text-xs text-dark-400 mb-1">
+                {new Date(ev.createdAt).toLocaleString()}
               </p>
-            )}
-          </div>
-
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : (
-            <EventLog events={events} />
-          )}
-        </section>
-
-        <div className="mt-6 text-center">
-          <Link
-            href="/"
-            className="text-sm text-dark-500 hover:text-brand-400 transition-colors"
-          >
-            &larr; Back to home
-          </Link>
-        </div>
-      </div>
+              <p className="text-white text-sm font-mono truncate">{ev.hash}</p>
+            </li>
+          ))}
+        </ul>
+      )}
     </main>
   );
 }

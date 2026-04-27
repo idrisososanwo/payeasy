@@ -5,6 +5,7 @@ import { Menu, Wallet, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ConnectWalletButton from "@/components/wallet/ConnectWalletButton";
+import { useActiveSection } from "@/hooks/useActiveSection";
 
 export default function Navbar() {
   const router = useRouter();
@@ -16,6 +17,8 @@ export default function Navbar() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const activeSection = useActiveSection(["features", "how-it-works", "stellar"]);
 
   const navLinks = [
     { name: "Features", href: "#features" },
@@ -45,15 +48,23 @@ export default function Navbar() {
 
         {/* Desktop Nav */}
         <div className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <a
-              key={link.name}
-              href={link.href}
-              className="text-dark-400 hover:text-white transition-colors duration-300 text-sm font-medium"
-            >
-              {link.name}
-            </a>
-          ))}
+          {navLinks.map((link) => {
+            const isActive = activeSection === link.href.replace("#", "");
+            return (
+              <a
+                key={link.name}
+                href={link.href}
+                className={`relative text-sm font-medium transition-all duration-300 ${
+                  isActive ? "text-white" : "text-dark-400 hover:text-white"
+                }`}
+              >
+                {link.name}
+                {isActive && (
+                  <span className="absolute -bottom-1.5 left-0 right-0 h-0.5 bg-brand-500 rounded-full animate-in fade-in slide-in-from-bottom-1 duration-300" />
+                )}
+              </a>
+            );
+          })}
         </div>
 
         {/* CTA Buttons */}
