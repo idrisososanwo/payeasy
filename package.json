@@ -13,7 +13,6 @@
     "test:coverage": "node --test --experimental-strip-types --experimental-test-module-mocks --experimental-test-coverage"
   },
   "dependencies": {
-    "@next/swc-darwin-arm64": "^16.2.4",
     "@stellar/freighter-api": "^6.0.1",
     "@stellar/stellar-sdk": "^14.6.1",
     "canvas-confetti": "^1.9.4",
