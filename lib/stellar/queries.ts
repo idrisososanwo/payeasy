@@ -1,4 +1,5 @@
-import { withRetry } from "./retry";
+import { withRetry } from "./retry.ts";
+
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 

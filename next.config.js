@@ -39,24 +39,17 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "images.unsplash.com",
+        hostname: "i.pravatar.cc",
+        pathname: "/**",
       },
       {
         protocol: "https",
-        hostname: "i.pravatar.cc",
+        hostname: "images.unsplash.com",
+        pathname: "/**",
       },
     ],
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 3600,
-        hostname: "i.pravatar.cc",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "images.unsplash.com",
-        pathname: "/**",
-      },
-    ],
   },
   async headers() {
     return [

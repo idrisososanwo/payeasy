@@ -228,7 +228,7 @@ export default function TransactionDetailModal({
                     Transaction Memo
                   </h4>
                   <div className="p-4 rounded-2xl bg-white/5 border border-white/5 text-sm text-dark-300 italic">
-                    "{transaction.memo}"
+                    &ldquo;{transaction.memo}&rdquo;
                   </div>
                 </div>
               )}

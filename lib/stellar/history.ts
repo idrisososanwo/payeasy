@@ -152,7 +152,7 @@ export interface CreateHorizonClientOptions {
   fetchFn?: FetchLike;
 }
 
-import { withRetry } from "./retry";
+import { withRetry } from "./retry.ts";
 
 export function createHorizonClient(
   options: CreateHorizonClientOptions = {}

@@ -1,55 +1,5 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { Wallet, ChevronDown, RefreshCw } from "lucide-react";
-import { useWalletBalance } from "@/hooks/useWalletBalance";
-
-interface ConnectWalletButtonProps {
-  horizonUrl?: string;
-}
-
-export default function ConnectWalletButton({
-  horizonUrl,
-}: ConnectWalletButtonProps) {
-  const [accountId, setAccountId] = useState<string | null>(null);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [refreshSignal, setRefreshSignal] = useState(0);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const { balance, isLoading, error, refresh } = useWalletBalance({
-    accountId,
-    horizonUrl,
-    refreshSignal,
-  });
-
-  function handleConnect() {
-    const mockId = "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN";
-    setAccountId(mockId);
-    setIsDropdownOpen(false);
-  }
-
-  function handleDisconnect() {
-    setAccountId(null);
-    setIsDropdownOpen(false);
-  }
-
-  function handleRefresh() {
-    setRefreshSignal((s) => s + 1);
-    refresh();
-  }
-
-  function shortAddress(id: string) {
-    return `${id.slice(0, 4)}…${id.slice(-4)}`;
-  }
-
-  if (!accountId) {
-    return (
-      <button
-        onClick={handleConnect}
-        className="btn-primary !py-2.5 !px-5 !text-sm !rounded-lg"
-      >
-        <Wallet size={16} />
-        Connect Wallet
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -92,7 +42,6 @@ export default function ConnectWalletButton() {
   const isMobile = useIsMobile();
   const appNetwork = getCurrentNetwork();
 
-  // Auto-collapse full address when dropdown closes
   useEffect(() => {
     if (!isOpen) {
       setShowFullAddress(false);
@@ -126,7 +75,6 @@ export default function ConnectWalletButton() {
     setShowConfirm(true);
   };
 
-  // Close dropdown when clicking outside (desktop only)
   useEffect(() => {
     if (isMobile) return;
     const handleClickOutside = (event: MouseEvent) => {
@@ -171,61 +119,6 @@ export default function ConnectWalletButton() {
     );
   }
 
-  return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={() => setIsDropdownOpen((o) => !o)}
-        className="btn-secondary !py-2.5 !px-4 !text-sm !rounded-lg flex items-center gap-2"
-        aria-expanded={isDropdownOpen}
-        aria-haspopup="true"
-      >
-        <Wallet size={16} />
-        <span>{shortAddress(accountId)}</span>
-        <ChevronDown
-          size={14}
-          className={`transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
-        />
-      </button>
-
-      {isDropdownOpen && (
-        <div className="absolute right-0 mt-2 w-64 glass rounded-xl p-4 z-50 shadow-xl animate-fade-in">
-          <p className="text-xs text-dark-400 mb-1">XLM Balance</p>
-          <div className="flex items-center justify-between mb-4">
-            {isLoading ? (
-              <span className="text-dark-400 text-sm animate-pulse">
-                Loading…
-              </span>
-            ) : error ? (
-              <span className="text-red-400 text-sm">{error}</span>
-            ) : (
-              <span className="text-white font-semibold text-lg">
-                {balance !== null
-                  ? `${parseFloat(balance).toFixed(2)} XLM`
-                  : "—"}
-              </span>
-            )}
-            <button
-              onClick={handleRefresh}
-              className="text-dark-400 hover:text-white transition-colors"
-              aria-label="Refresh balance"
-            >
-              <RefreshCw
-                size={14}
-                className={isLoading ? "animate-spin" : ""}
-              />
-            </button>
-          </div>
-          <p className="text-xs text-dark-500 font-mono break-all mb-4">
-            {accountId}
-          </p>
-          <button
-            onClick={handleDisconnect}
-            className="w-full btn-secondary !py-2 !text-sm !rounded-lg !justify-center"
-          >
-            Disconnect
-          </button>
-        </div>
-      )}
   if (!isConnected) {
     return (
       <div className="flex flex-col items-end gap-1">
@@ -341,7 +234,6 @@ export default function ConnectWalletButton() {
         )}
       </button>
 
-      {/* Desktop dropdown */}
       {!isMobile && (
         <AnimatePresence>
           {isOpen && (
@@ -350,8 +242,35 @@ export default function ConnectWalletButton() {
               animate={{ opacity: 1, y: 5, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="absolute right-0 top-full z-50 w-48 mt-2 glass rounded-xl border border-white/10 shadow-2xl overflow-hidden"
+              className="absolute right-0 top-full z-50 w-64 mt-2 glass rounded-xl border border-white/10 shadow-2xl overflow-hidden"
             >
+              <div className="px-3 py-2 border-b border-white/5 mb-1">
+                <div className="flex items-center justify-between mb-0.5">
+                  <p className="text-[10px] text-dark-500 uppercase tracking-widest font-semibold">Balance</p>
+                  <button
+                    onClick={() => setShowFullAddress(!showFullAddress)}
+                    className="p-1 rounded-md bg-white/5 hover:bg-brand-500/20 text-brand-400 transition-all"
+                    title={showFullAddress ? "Show Truncated" : "Show Full Address"}
+                  >
+                    {showFullAddress ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+                  </button>
+                </div>
+                {isBalanceLoading ? (
+                  <div className="h-4 w-20 bg-dark-800/60 rounded animate-pulse" />
+                ) : (
+                  <p className="text-sm font-mono text-white flex items-center gap-1.5">
+                    <Coins size={13} className="text-brand-400" />
+                    {balance ?? "—"} XLM
+                  </p>
+                )}
+              </div>
+
+              <div className="px-3 py-2 bg-dark-950/30 rounded-lg mx-1 mb-2 border border-white/5">
+                <p className={`text-[11px] font-mono break-all leading-relaxed ${showFullAddress ? "text-dark-100" : "text-dark-400"}`}>
+                  {showFullAddress ? publicKey : truncatedKey}
+                </p>
+              </div>
+
               <div className="p-1">
                 {menuItems}
               </div>
@@ -360,7 +279,6 @@ export default function ConnectWalletButton() {
         </AnimatePresence>
       )}
 
-      {/* Mobile bottom sheet */}
       {isMobile && (
         <BottomSheet
           isOpen={isOpen}
@@ -372,73 +290,6 @@ export default function ConnectWalletButton() {
           </div>
         </BottomSheet>
       )}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 5, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute right-0 top-full z-50 w-64 mt-2 glass rounded-xl border border-white/10 shadow-2xl overflow-hidden"
-          >
-            {/* Balance display */}
-            <div className="px-3 py-2 border-b border-white/5 mb-1">
-              <div className="flex items-center justify-between mb-0.5">
-                <p className="text-[10px] text-dark-500 uppercase tracking-widest font-semibold">Balance</p>
-                <button 
-                  onClick={() => setShowFullAddress(!showFullAddress)}
-                  className="p-1 rounded-md bg-white/5 hover:bg-brand-500/20 text-brand-400 transition-all"
-                  title={showFullAddress ? "Show Truncated" : "Show Full Address"}
-                >
-                  {showFullAddress ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
-                </button>
-              </div>
-              {isBalanceLoading ? (
-                <div className="h-4 w-20 bg-dark-800/60 rounded animate-pulse" />
-              ) : (
-                <p className="text-sm font-mono text-white flex items-center gap-1.5">
-                  <Coins size={13} className="text-brand-400" />
-                  {balance ?? "—"} XLM
-                </p>
-              )}
-            </div>
-
-            <div className="px-3 py-2 bg-dark-950/30 rounded-lg mx-1 mb-2 border border-white/5">
-              <p className={`text-[11px] font-mono break-all leading-relaxed ${showFullAddress ? "text-dark-100" : "text-dark-400"}`}>
-                {showFullAddress ? publicKey : truncatedKey}
-              </p>
-            </div>
-
-            <div className="p-1">
-              <div className="flex items-center justify-between px-3 py-2 hover:bg-white/5 rounded-lg transition-colors">
-                <div className="flex items-center gap-3 text-sm text-dark-300">
-                  <Copy size={16} />
-                  <span>Copy Address</span>
-                </div>
-                <CopyButton value={publicKey || ""} label="Copy wallet address" className="!p-1 hover:!bg-transparent" />
-              </div>
-              
-              <button
-                onClick={() => { setIsOpen(false); router.push("/connect"); }}
-                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-dark-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-              >
-                <ExternalLink size={16} />
-                <span>Wallet Dashboard</span>
-              </button>
-
-              <div className="h-px bg-white/5 my-1" />
-
-              <button
-                onClick={confirmDisconnect}
-                className="w-full flex items-center gap-3 px-3 py-2 text-sm text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors"
-              >
-                <LogOut size={16} />
-                <span>Disconnect</span>
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <ConfirmDialog
         isOpen={showConfirm}

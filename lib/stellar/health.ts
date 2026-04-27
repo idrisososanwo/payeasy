@@ -1,4 +1,4 @@
-import { withRetry } from "./retry";
+import { withRetry } from "./retry.ts";
 
 export type NetworkStatus = "healthy" | "degraded" | "down";
 

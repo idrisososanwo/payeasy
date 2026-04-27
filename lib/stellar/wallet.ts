@@ -94,10 +94,6 @@ export async function signTx(xdr: string, network?: string): Promise<string | nu
 }
 
 
-/**
- * Returns the installed Freighter extension version string (e.g. "12.1.0"),
- * or null if Freighter is not installed or the version cannot be determined.
- */
 export async function getFreighterVersion(): Promise<string | null> {
   if (typeof window === "undefined") return null;
   try {
@@ -113,7 +109,6 @@ export async function getFreighterVersion(): Promise<string | null> {
       return win.freighter.getVersion() ?? null;
     }
 
-    // Fallback: try the freighter-api module's getVersion export if present
     const freighterModule = await import("@stellar/freighter-api");
     if (typeof (freighterModule as Record<string, unknown>).getVersion === "function") {
       const result = await (freighterModule as unknown as { getVersion: () => Promise<{ version: string }> }).getVersion();
@@ -133,10 +128,6 @@ function parseVersion(v: string): [number, number, number] {
   return [parts[0] ?? 0, parts[1] ?? 0, parts[2] ?? 0];
 }
 
-/**
- * Returns true if the installed Freighter version meets the minimum requirement (10.0.0).
- * Returns null when the version cannot be determined.
- */
 export async function isFreighterVersionSupported(): Promise<boolean | null> {
   const version = await getFreighterVersion();
   if (!version) return null;
@@ -149,11 +140,6 @@ export async function isFreighterVersionSupported(): Promise<boolean | null> {
   return patch >= minPatch;
 }
 
-/**
- * Gets the current network of the connected Freighter wallet.
- * Returns "TESTNET" or "MAINNET" if connected and network can be determined.
- * Returns null if Freighter is not available, not connected, or network cannot be determined.
- */
 export async function getFreighterNetwork(): Promise<"TESTNET" | "MAINNET" | null> {
   if (typeof window === "undefined") return null;
   try {
