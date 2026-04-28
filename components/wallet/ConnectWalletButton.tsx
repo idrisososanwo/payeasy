@@ -56,7 +56,6 @@ export default function ConnectWalletButton() {
     ? `${publicKey.slice(0, 4)}...${publicKey.slice(-4)}`
     : "";
 
-
   const handleDisconnect = () => {
     disconnect();
     setIsOpen(false);
@@ -288,7 +287,7 @@ export default function ConnectWalletButton() {
         onClose={() => setShowConfirm(false)}
         onConfirm={handleDisconnect}
         title="Disconnect Wallet?"
-        description="Are you sure you want to disconnect? You'll need to reconnect to interact with your escrows."
+        description="Are you sure you want to disconnect? You&apos;ll need to reconnect to interact with your escrows."
         confirmText="Disconnect"
         variant="danger"
       />
