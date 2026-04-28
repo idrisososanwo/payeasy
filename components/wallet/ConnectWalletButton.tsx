@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Wallet, LogOut, Copy, Check, ChevronDown, ExternalLink, AlertCircle, Loader2, Coins, AlertTriangle, Maximize2, Minimize2 } from "lucide-react";
+import { Wallet, LogOut, Copy, ChevronDown, ExternalLink, AlertCircle, Loader2, Coins, AlertTriangle, Maximize2, Minimize2 } from "lucide-react";
 import { useStellarAuth } from "@/context/StellarContext";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { BottomSheet } from "@/components/ui/bottom-sheet";

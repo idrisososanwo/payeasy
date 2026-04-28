@@ -8,7 +8,6 @@ import {
   Zap,
   Globe,
   ArrowLeft,
-  Copy,
   Check,
   ExternalLink,
   AlertCircle,
@@ -60,7 +59,6 @@ export default function ConnectWalletPage() {
     error,
   } = useStellar();
 
-  const [copied, setCopied] = useState(false);
   const [step, setStep] = useState<Step>("intro");
   const [showDisconnectConfirm, setShowDisconnectConfirm] = useState(false);
   const [errorExpanded, setErrorExpanded] = useState(false);
@@ -92,13 +90,6 @@ export default function ConnectWalletPage() {
     await connect();
   };
 
-  const handleCopy = async () => {
-    if (publicKey) {
-      await navigator.clipboard.writeText(publicKey);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
 
   const handleDisconnect = () => {
     disconnect();
@@ -494,7 +485,7 @@ export default function ConnectWalletPage() {
                   <CopyButton 
                     value={publicKey} 
                     label="Copy wallet address" 
-                    iconSize={18} 
+                    size={18} 
                     className="!p-3 rounded-xl glass hover:bg-white/10 transition-colors shrink-0" 
                   />
                   <a
@@ -509,15 +500,6 @@ export default function ConnectWalletPage() {
                   </a>
                 </div>
 
-                {copied && (
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-xs text-accent-400 text-center"
-                  >
-                    Address copied to clipboard
-                  </motion.p>
-                )}
               </div>
 
               {/* Fund testnet */}
