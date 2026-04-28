@@ -1,3 +1,4 @@
+import type { xdr } from "@stellar/stellar-sdk";
 import { withRetry } from "./retry.ts";
 
 
@@ -291,7 +292,7 @@ export async function getContractState(contractId: string): Promise<ContractStat
       fee: "100",
       networkPassphrase,
     })
-      .addOperation(contract.call(method, ...(args as import("@stellar/stellar-sdk").xdr.ScVal[])))
+      .addOperation(contract.call(method, ...(args as xdr.ScVal[])))
       .setTimeout(60)
       .build();
 
